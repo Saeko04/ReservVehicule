@@ -11,7 +11,7 @@ public class Passerelle {
             try {
                 Class.forName("org.postgresql.Driver");
 
-                String url = "jdbc:postgresql://192.168.1.245:5432/slam2026_AP_louisethymeo?useUnicode=true&characterEncoding=UTF-8";
+                String url = "jdbc:postgresql://192.168.1.245:5432/slam2026APvechicule_Louise_Thymeo";
                 String user = "lemay";
                 String password = "lemay";
 
@@ -132,3 +132,4 @@ public class Passerelle {
         }
     }
 }
+
