@@ -1,8 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package reservevehicule;
+package reservvehi;
 
 import java.util.Date;
 
@@ -104,8 +100,5 @@ public class Demande {
     public void setEtat(Boolean etat) {
         this.etat = etat;
     }
-    
-    
-    
     
 }

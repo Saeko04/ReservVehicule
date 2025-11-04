@@ -1,13 +1,6 @@
 package reservvehi;
 
-/**
- *
- * @author Louise
- */
 import java.sql.*;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 
 public class Passerelle {
 
@@ -16,18 +9,16 @@ public class Passerelle {
     public static Connection getConnexion() {
         if (connexion == null) {
             try {
-                // Charger le pilote
                 Class.forName("org.postgresql.Driver");
 
-                // Modifier les infos selon ta config
-                String url = "jdbc:postgresql://192.168.1.245:5432/slam2026_AP_louisethymeo";
+                String url = "jdbc:postgresql://192.168.1.245:5432/slam2026_AP_louisethymeo?useUnicode=true&characterEncoding=UTF-8";
                 String user = "lemay";
                 String password = "lemay";
 
                 connexion = DriverManager.getConnection(url, user, password);
-                System.out.println("Connexion reussie a PostgreSQL !");
+                System.out.println("Connexion réussie à PostgreSQL !");
             } catch (ClassNotFoundException e) {
-                System.out.println("Pilote PostgreSQL non trouve !");
+                System.out.println("Pilote PostgreSQL non trouvé !");
                 e.printStackTrace();
             } catch (SQLException e) {
                 System.out.println("Erreur de connexion à la base !");
@@ -41,7 +32,7 @@ public class Passerelle {
         if (connexion != null) {
             try {
                 connexion.close();
-                System.out.println("Connexion fermee.");
+                System.out.println("Connexion fermée.");
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -50,30 +41,94 @@ public class Passerelle {
 
     public static boolean verifierConnexion(int matricule, String mdp) {
         boolean valide = false;
-        Connection cn = getConnexion();
-
         try {
-            String sql = "SELECT * FROM personne WHERE matricule = ? AND mdp = ?";
-            PreparedStatement pstmt = cn.prepareStatement(sql);
-            pstmt.setInt(1, matricule);
-            pstmt.setString(2, mdp);
-
-            ResultSet rs = pstmt.executeQuery();
-
+            String sql = "SELECT * FROM personne WHERE matricule=? AND mdp=?";
+            PreparedStatement ps = getConnexion().prepareStatement(sql);
+            ps.setInt(1, matricule);
+            ps.setString(2, mdp);
+            ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 valide = true;
-                System.out.println("Connexion utilisateur reussie !");
-            } else {
-                System.out.println("Matricule ou mot de passe incorrect.");
             }
-
             rs.close();
-            pstmt.close();
+            ps.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return valide;
     }
 
+    public static Personne getPersonneConnectee(int matricule, String mdp) {
+        Personne p = null;
+        try {
+            String sql = "SELECT * FROM personne WHERE matricule=? AND mdp=?";
+            PreparedStatement ps = getConnexion().prepareStatement(sql);
+            ps.setInt(1, matricule);
+            ps.setString(2, mdp);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                p = new Personne(rs.getInt("matricule"),
+                        rs.getString("nom"),
+                        rs.getString("telephone"),
+                        null,
+                        rs.getString("mdp"));
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return p;
+    }
+
+    public static void afficherDemandes() {
+        try {
+            String sql = "SELECT * FROM demande";
+            PreparedStatement ps = getConnexion().prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            System.out.println("\n===== Liste des demandes =====");
+            while (rs.next()) {
+                System.out.println("Numéro : " + rs.getInt("numero")
+                        + " | Matricule : " + rs.getInt("matricule")
+                        + " | Type : " + rs.getInt("notype")
+                        + " | Immat : " + rs.getString("immat")
+                        + " | Date début : " + rs.getDate("datedebut")
+                        + " | Durée : " + rs.getInt("duree")
+                        + " | État : " + rs.getString("etat"));
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void ajouterDemande(int matricule, int noType, String dateDebut, int duree) {
+        try {
+            // Conversion jj/MM/yyyy → yyyy-MM-dd
+            String[] parts = dateDebut.split("[/\\-]");
+            if (parts.length != 3) {
+                System.out.println("Format de date invalide !");
+                return;
+            }
+            String dateSQL = parts[2] + "-" + parts[1] + "-" + parts[0];
+
+            String sql = "INSERT INTO demande (datereserv, numero, datedebut, matricule, notype, duree, etat) "
+                    + "VALUES (CURRENT_DATE, DEFAULT, ?, ?, ?, ?, 'demandée')";
+            PreparedStatement ps = getConnexion().prepareStatement(sql);
+            ps.setDate(1, java.sql.Date.valueOf(dateSQL));
+            ps.setInt(2, matricule);
+            ps.setInt(3, noType);
+            ps.setInt(4, duree);
+
+            int nb = ps.executeUpdate();
+            if (nb > 0) {
+                System.out.println("✅ Demande ajoutée avec succès !");
+            }
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }
